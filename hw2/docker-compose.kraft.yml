@@ -1,0 +1,128 @@
+services:
+  kafka1:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka1
+    hostname: kafka1
+    ports:
+      - "9092:9092"
+    environment:
+      CLUSTER_ID: fv1Ktv_cSOy96fbDcPz_rg
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29092,2@kafka2:29093,3@kafka3:29094
+      KAFKA_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://0.0.0.0:9092,CONTROLLER://kafka1:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SSL,EXTERNAL:SSL,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka1.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: Password1_
+      KAFKA_SSL_KEY_PASSWORD: Password1_
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka1.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: Password1_
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - kafka-network
+    volumes:
+      - ./ssl/kafka1:/etc/kafka/secrets
+
+  kafka2:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka2
+    hostname: kafka2
+    ports:
+      - "9093:9093"
+    environment:
+      CLUSTER_ID: fv1Ktv_cSOy96fbDcPz_rg
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29092,2@kafka2:29093,3@kafka3:29094
+      KAFKA_LISTENERS: INTERNAL://kafka2:19093,EXTERNAL://0.0.0.0:9093,CONTROLLER://kafka2:29093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:19093,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SSL,EXTERNAL:SSL,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka2.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: Password1_
+      KAFKA_SSL_KEY_PASSWORD: Password1_
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka2.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: Password1_
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - kafka-network
+    volumes:
+      - ./ssl/kafka2:/etc/kafka/secrets
+
+  kafka3:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka3
+    hostname: kafka3
+    ports:
+      - "9094:9094"
+    environment:
+      CLUSTER_ID: fv1Ktv_cSOy96fbDcPz_rg
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29092,2@kafka2:29093,3@kafka3:29094
+      KAFKA_LISTENERS: INTERNAL://kafka3:19094,EXTERNAL://0.0.0.0:9094,CONTROLLER://kafka3:29094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:19094,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SSL,EXTERNAL:SSL,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka3.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: Password1_
+      KAFKA_SSL_KEY_PASSWORD: Password1_
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka3.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: Password1_
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM:
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - kafka-network
+    volumes:
+      - ./ssl/kafka3:/etc/kafka/secrets
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    ports:
+      - "8080:8080"
+    networks:
+      - kafka-network
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kafka-kraft-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:19092,kafka2:19093,kafka3:19094
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/ca-truststore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: Password1_
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    volumes:
+      - ./ssl/ca-truststore.jks:/etc/kafka/secrets/ca-truststore.jks
+      - ./ssl/ca-key:/etc/kafka/secrets/ca-key
+      - ./ssl/ca-crt:/etc/kafka/secrets/ca-crt
+networks:
+  kafka-network:
+    driver: bridge
