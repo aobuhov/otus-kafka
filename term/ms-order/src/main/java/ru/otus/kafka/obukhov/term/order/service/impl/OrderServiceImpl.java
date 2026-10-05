@@ -1,0 +1,99 @@
+package ru.otus.kafka.obukhov.term.order.service.impl;
+
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.otus.kafka.obukhov.term.order.dto.CreateOrderRequest;
+import ru.otus.kafka.obukhov.term.order.dto.OrderResponse;
+import ru.otus.kafka.obukhov.term.order.entity.Order;
+import ru.otus.kafka.obukhov.term.order.entity.OrderStatus;
+import ru.otus.kafka.obukhov.term.order.event.OrderCreatedEvent;
+import ru.otus.kafka.obukhov.term.order.repository.OrderRepository;
+import ru.otus.kafka.obukhov.term.order.service.OrderService;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OrderServiceImpl implements OrderService {
+
+    private static final String ORDER_CREATED_TOPIC = "order.created";
+
+    private final OrderRepository orderRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    @Override
+    @Transactional
+    public OrderResponse createOrder(CreateOrderRequest request) {
+        Order order = Order.builder()
+                .customerId(request.getCustomerId())
+                .restaurantId(request.getRestaurantId())
+                .status(OrderStatus.CREATED)
+                .totalAmount(request.getTotalAmount())
+                .build();
+
+        Order saved = orderRepository.save(order);
+
+        OrderCreatedEvent event = OrderCreatedEvent.builder()
+                .orderId(saved.getId())
+                .customerId(saved.getCustomerId())
+                .restaurantId(saved.getRestaurantId())
+                .totalAmount(saved.getTotalAmount())
+                .createdAt(saved.getCreatedAt())
+                .build();
+
+        // ключ = orderId, чтобы события одного заказа шли в одну партицию
+        kafkaTemplate.send(ORDER_CREATED_TOPIC, saved.getId().toString(), event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Failed to publish order.created for orderId={}", saved.getId(), ex);
+                    } else {
+                        log.info("Published order.created for orderId={} partition={}",
+                                saved.getId(),
+                                result.getRecordMetadata().partition());
+                    }
+                });
+
+        return mapToResponse(saved);
+    }
+
+    @Override
+    public OrderResponse getOrder(UUID id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
+        return mapToResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public void updateStatus(UUID orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        OrderStatus current = order.getStatus();
+        if (current == newStatus) {
+            log.warn("Order {} already in status {}, skip", orderId, newStatus);
+            return;
+        }
+
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+        log.info("Order {} status changed: {} -> {}", orderId, current, newStatus);
+    }
+
+    private OrderResponse mapToResponse(Order order) {
+        return OrderResponse.builder()
+                .id(order.getId())
+                .customerId(order.getCustomerId())
+                .restaurantId(order.getRestaurantId())
+                .status(order.getStatus().name())
+                .totalAmount(order.getTotalAmount())
+                .createdAt(order.getCreatedAt())
+                .build();
+    }
+}
