@@ -9,19 +9,19 @@ spring:
     username: orders_user
     password: AppAdmin123!
   kafka:
-    bootstrap-servers: localhost:29092   # EXTERNAL listener для запуска из IDE
+    bootstrap-servers: localhost:9092   # EXTERNAL listener для запуска из IDE
     consumer:
       group-id: ms-order
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
         spring.json.trusted.packages: "ru.otus.kafka.obukhov.term.*"
         spring.json.value.default.type: "ru.otus.kafka.obukhov.term.order.dto.OrderStatusEvent"
         spring.json.use.type.headers: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
       acks: all
       properties:
         spring.json.add.type.headers: false
