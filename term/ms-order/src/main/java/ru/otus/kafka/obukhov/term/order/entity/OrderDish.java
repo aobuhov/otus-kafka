@@ -31,6 +31,9 @@ public class OrderDish {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "dish_id", nullable = false)
+    private UUID dishId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;

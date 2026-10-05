@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.otus.kafka.obukhov.term.order.dto.CreateOrderRequest;
+import ru.otus.kafka.obukhov.term.order.dto.OrderDetailsResponse;
 import ru.otus.kafka.obukhov.term.order.dto.OrderResponse;
 import ru.otus.kafka.obukhov.term.order.service.OrderService;
 
@@ -33,5 +34,10 @@ public class OrderController {
             @PathVariable UUID id
     ) {
         return ResponseEntity.ok(orderService.getOrder(id));
+    }
+
+    @GetMapping("/{id}/details")
+    public ResponseEntity<OrderDetailsResponse> getOrderDetails(@PathVariable UUID id) {
+        return ResponseEntity.ok(orderService.getOrderDetails(id));
     }
 }

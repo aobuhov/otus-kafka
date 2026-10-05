@@ -7,6 +7,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.otus.kafka.obukhov.term.order.dto.CreateOrderRequest;
+import ru.otus.kafka.obukhov.term.order.dto.OrderDetailsResponse;
+import ru.otus.kafka.obukhov.term.order.dto.OrderItemDto;
 import ru.otus.kafka.obukhov.term.order.dto.OrderResponse;
 import ru.otus.kafka.obukhov.term.order.entity.Order;
 import ru.otus.kafka.obukhov.term.order.entity.OrderStatus;
@@ -15,6 +17,7 @@ import ru.otus.kafka.obukhov.term.order.repository.OrderRepository;
 import ru.otus.kafka.obukhov.term.order.service.OrderService;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -84,6 +87,31 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(newStatus);
         orderRepository.save(order);
         log.info("Order {} status changed: {} -> {}", orderId, current, newStatus);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailsResponse getOrderDetails(UUID id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
+
+        List<OrderItemDto> items = order.getDishes().stream()
+                .map(dish -> OrderItemDto.builder()
+                        .dishId(dish.getId())  // ⚠️ если у OrderDish есть dishId как поле
+                        .cnt(dish.getCnt())
+                        .price(dish.getPrice())
+                        .build())
+                .toList();
+
+        return OrderDetailsResponse.builder()
+                .id(order.getId())
+                .customerId(order.getCustomerId())
+                .restaurantId(order.getRestaurantId())
+                .status(order.getStatus().name())
+                .totalAmount(order.getTotalAmount())
+                .createdAt(order.getCreatedAt())
+                .items(items)
+                .build();
     }
 
     private OrderResponse mapToResponse(Order order) {
