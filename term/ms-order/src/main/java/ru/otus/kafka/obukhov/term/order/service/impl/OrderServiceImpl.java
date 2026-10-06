@@ -1,6 +1,7 @@
 package ru.otus.kafka.obukhov.term.order.service.impl;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -10,12 +11,11 @@ import ru.otus.kafka.obukhov.term.order.dto.CreateOrderRequest;
 import ru.otus.kafka.obukhov.term.order.dto.OrderDetailsResponse;
 import ru.otus.kafka.obukhov.term.order.dto.OrderItemDto;
 import ru.otus.kafka.obukhov.term.order.dto.OrderResponse;
-import ru.otus.kafka.obukhov.term.order.entity.Order;
-import ru.otus.kafka.obukhov.term.order.entity.OrderDish;
-import ru.otus.kafka.obukhov.term.order.entity.OrderStatus;
+import ru.otus.kafka.obukhov.term.order.entity.*;
 import ru.otus.kafka.obukhov.term.order.event.OrderCreatedEvent;
 import ru.otus.kafka.obukhov.term.order.repository.OrderDishRepository;
 import ru.otus.kafka.obukhov.term.order.repository.OrderRepository;
+import ru.otus.kafka.obukhov.term.order.repository.OutboxRepository;
 import ru.otus.kafka.obukhov.term.order.service.OrderService;
 
 import java.time.OffsetDateTime;
@@ -31,7 +31,8 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderDishRepository orderDishRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -62,19 +63,31 @@ public class OrderServiceImpl implements OrderService {
                 .createdAt(saved.getCreatedAt())
                 .build();
 
-        // ключ = orderId, чтобы события одного заказа шли в одну партицию
-        kafkaTemplate.send(ORDER_CREATED_TOPIC, saved.getId().toString(), event)
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.error("Failed to publish order.created for orderId={}", saved.getId(), ex);
-                    } else {
-                        log.info("Published order.created for orderId={} partition={}",
-                                saved.getId(),
-                                result.getRecordMetadata().partition());
-                    }
-                });
+        saveToOutbox(saved.getId(), event);
 
         return mapToResponse(saved);
+    }
+
+    private void saveToOutbox(UUID orderId, OrderCreatedEvent event) {
+        try {
+            String payload = objectMapper.writeValueAsString(event);
+
+            OutboxEvent outbox = OutboxEvent.builder()
+                    .aggregateId(orderId)
+                    .eventType(EventType.ORDER_CREATED)
+                    .aggregateType("ORDER")
+                    .topic(ORDER_CREATED_TOPIC)
+                    .payload(payload)
+                    .status(EventStatus.NEW)
+                    .build();
+
+            outboxRepository.save(outbox);
+            log.info("Saved outbox event ORDER_CREATED for orderId={}", orderId);
+        } catch (Exception e) {
+            // Если не смогли сериализовать — вся транзакция откатится
+            throw new IllegalStateException(
+                    "Failed to serialize OrderCreatedEvent for orderId=" + orderId, e);
+        }
     }
 
     @Override
