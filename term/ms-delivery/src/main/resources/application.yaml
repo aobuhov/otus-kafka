@@ -9,7 +9,7 @@ spring:
     username: delivery_user
     password: AppAdmin123!
   kafka:
-    bootstrap-servers: localhost:9092   # EXTERNAL listener для запуска из IDE
+    bootstrap-servers: localhost:9092
     consumer:
       group-id: ms-delivery
       auto-offset-reset: earliest
@@ -17,11 +17,11 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       properties:
         spring.json.trusted.packages: "ru.otus.kafka.obukhov.term.*"
-      producer:
-        key-serializer: org.apache.kafka.common.serialization.StringSerializer
-        value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
-        properties:
-          spring.json.add.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        spring.json.add.type.headers: false
     template:
       observation-enabled: true   # Пробрасывает traceId в Kafka-сообщения
     listener:
