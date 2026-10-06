@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.otus.kafka.obukhov.term.restaurant.dto.RestaurantDishRequest;
+import ru.otus.kafka.obukhov.term.restaurant.dto.RestaurantDishResponse;
 import ru.otus.kafka.obukhov.term.restaurant.entity.Dish;
 import ru.otus.kafka.obukhov.term.restaurant.entity.Restaurant;
 import ru.otus.kafka.obukhov.term.restaurant.entity.RestaurantDish;
@@ -26,8 +27,17 @@ public class RestaurantDishController {
     private final DishRepository dishRepository;
 
     @GetMapping("/by-restaurant/{restaurantId}")
-    public List<RestaurantDish> getByRestaurant(@PathVariable UUID restaurantId) {
-        return repository.findByRestaurantId(restaurantId);
+    public List<RestaurantDishResponse> getByRestaurant(@PathVariable UUID restaurantId) {
+        return repository.findByRestaurantId(restaurantId).stream()
+                .map(rd -> RestaurantDishResponse.builder()
+                        .restaurantId(rd.getRestaurant().getId())
+                        .restaurantName(rd.getRestaurant().getName())
+                        .dishId(rd.getDish().getId())
+                        .dishName(rd.getDish().getName())
+                        .cnt(rd.getCnt())
+                        .price(rd.getPrice())
+                        .build())
+                .toList();
     }
 
     @PostMapping

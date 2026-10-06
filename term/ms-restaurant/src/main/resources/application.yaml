@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: ms-order
+    name: ms-restaurant
   datasource:
     url: jdbc:postgresql://localhost:5432/restaurants_db
     username: restaurants_user
@@ -18,11 +18,11 @@ spring:
       properties:
         spring.json.trusted.packages: "ru.otus.kafka.obukhov.term.*"
         spring.json.value.default.type: "ru.otus.kafka.obukhov.term.restaurant.event.PaymentCompletedEvent"
-      producer:
-        key-serializer: org.apache.kafka.common.serialization.StringSerializer
-        value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
-        properties:
-          spring.json.add.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      properties:
+        spring.json.add.type.headers: false
     template:
       observation-enabled: true   # Пробрасывает traceId в Kafka-сообщения
     listener:
