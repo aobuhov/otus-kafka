@@ -22,7 +22,7 @@ public class OrderClient {
 
     public OrderDetailsDto getOrder(UUID orderId) {
         return restClient.get()
-                .uri("/api/v1/orders/{id}", orderId)
+                .uri("/api/v1/orders/{id}/details", orderId)
                 .retrieve()
                 .body(OrderDetailsDto.class);
     }
