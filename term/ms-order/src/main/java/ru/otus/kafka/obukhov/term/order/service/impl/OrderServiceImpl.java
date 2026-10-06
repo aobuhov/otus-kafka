@@ -11,8 +11,10 @@ import ru.otus.kafka.obukhov.term.order.dto.OrderDetailsResponse;
 import ru.otus.kafka.obukhov.term.order.dto.OrderItemDto;
 import ru.otus.kafka.obukhov.term.order.dto.OrderResponse;
 import ru.otus.kafka.obukhov.term.order.entity.Order;
+import ru.otus.kafka.obukhov.term.order.entity.OrderDish;
 import ru.otus.kafka.obukhov.term.order.entity.OrderStatus;
 import ru.otus.kafka.obukhov.term.order.event.OrderCreatedEvent;
+import ru.otus.kafka.obukhov.term.order.repository.OrderDishRepository;
 import ru.otus.kafka.obukhov.term.order.repository.OrderRepository;
 import ru.otus.kafka.obukhov.term.order.service.OrderService;
 
@@ -28,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     private static final String ORDER_CREATED_TOPIC = "order.created";
 
     private final OrderRepository orderRepository;
+    private final OrderDishRepository orderDishRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Override
@@ -41,6 +44,15 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         Order saved = orderRepository.save(order);
+
+        request.getDishes().stream().forEach(od ->
+                orderDishRepository.save(OrderDish.builder()
+                                .order(saved)
+                                .dishId(od.getDishId())
+                                .cnt(od.getCnt())
+                                .price(od.getPrice())
+                        .build())
+        );
 
         OrderCreatedEvent event = OrderCreatedEvent.builder()
                 .orderId(saved.getId())

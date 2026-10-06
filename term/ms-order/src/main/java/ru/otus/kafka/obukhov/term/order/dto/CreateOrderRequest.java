@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -21,4 +22,7 @@ public class CreateOrderRequest {
     @NotNull(message = "totalAmount is required")
     @Positive(message = "totalAmount must be positive")
     private BigDecimal totalAmount;
+
+    @NotNull(message = "dishes list is required")
+    private List<OrderDishRequest> dishes;
 }
