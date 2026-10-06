@@ -34,7 +34,7 @@ public class AuditFilter extends OncePerRequestFilter {
 
             AuditEvent event = AuditEvent.builder()
                     .traceId(getTraceId(request))
-                    .userId(request.getHeader("X-User-Id"))
+                    .userId(getUserId(request.getHeader("X-User-Id")))
                     .serviceName(properties.getServiceName())
                     .endpoint(request.getRequestURI())
                     .method(request.getMethod())
@@ -68,5 +68,9 @@ public class AuditFilter extends OncePerRequestFilter {
         // Fallback: заголовок от upstream
         traceId = request.getHeader("X-Trace-Id");
         return traceId != null ? traceId : "unknown";
+    }
+
+    private String getUserId(String userId) {
+        return userId == null ? "incognito": userId;
     }
 }
