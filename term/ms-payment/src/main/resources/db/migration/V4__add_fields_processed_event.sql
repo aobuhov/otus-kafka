@@ -1,0 +1,2 @@
+ALTER TABLE processed_events ADD event_type VARCHAR(100) NOT null;
+ALTER TABLE processed_events ADD processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
