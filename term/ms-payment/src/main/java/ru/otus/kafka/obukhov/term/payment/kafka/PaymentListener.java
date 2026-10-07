@@ -59,7 +59,11 @@ public class PaymentListener {
             log.info("Payment for orderId={} marked as CANCELLED", orderId);
         });
 
-        processedEventRepository.save(ProcessedEvent.builder().id(event.getEventId()).build());
+        int inserted = processedEventRepository.insertIfAbsent(event.getEventId(), "order.cancelled");
+        if (inserted == 0) {
+            log.warn("Event {} already processed, skip", event.getEventId());
+            return;
+        }
 
     }
 
@@ -118,7 +122,12 @@ public class PaymentListener {
             log.info("Payment FAILED for orderId={}", orderId);
             publishResult(orderId, payment.getId(), "ABORTED", "Payment declined");
         }
-        processedEventRepository.save(ProcessedEvent.builder().id(event.getEventId()).build());
+
+        int inserted = processedEventRepository.insertIfAbsent(event.getEventId(), "restaurant.orders.completed");
+        if (inserted == 0) {
+            log.warn("Event {} already processed, skip", event.getEventId());
+            return;
+        }
     }
 
     private Payment idempotentReceiver(Payment payment) {
