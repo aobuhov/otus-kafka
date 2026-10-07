@@ -11,4 +11,5 @@ import java.util.UUID;
 @Builder
 public class PaymentCompletedEvent {
     private UUID orderId;
+    private UUID eventId;
 }

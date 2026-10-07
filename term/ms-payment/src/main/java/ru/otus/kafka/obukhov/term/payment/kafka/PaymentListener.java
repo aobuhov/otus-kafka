@@ -29,11 +29,18 @@ public class PaymentListener {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final Random random = new Random();
     private final OrderClient orderClient;
+    private final ProcessedEventRepository processedEventRepository;
 
     // === Обработка отмены заказа ===
     @KafkaListener(topics = "order.cancelled", groupId = "ms-payment")
     @Transactional
     public void onOrderCancelled(OrderCancelledEvent event) {
+
+        if (processedEventRepository.existsById(event.getEventId())) {
+            log.debug("event {} already processed", event.getEventId());
+            return;
+        }
+
         UUID orderId = event.getOrderId();
         log.info("Received order.cancelled for orderId={}", orderId);
 
@@ -51,14 +58,22 @@ public class PaymentListener {
             paymentRepository.save(payment);
             log.info("Payment for orderId={} marked as CANCELLED", orderId);
         });
+
+        processedEventRepository.save(ProcessedEvent.builder().id(event.getEventId()).build());
+
     }
 
-    // === Обработка принятия заказа рестораном ===
-    @KafkaListener(topics = "restaurant.orders.accepted", groupId = "ms-payment")
+    @KafkaListener(topics = "restaurant.orders.completed", groupId = "ms-payment")
     @Transactional
-    public void onRestaurantAccepted(RestaurantOrderAcceptedEvent event) {
+    public void onRestaurantCompleted(RestaurantOrderAcceptedEvent event) {
+
+        if (processedEventRepository.existsById(event.getEventId())) {
+            log.debug("event {} already processed", event.getEventId());
+            return;
+        }
+
         UUID orderId = event.getOrderId();
-        log.info("Received restaurant.orders.accepted for orderId={}", orderId);
+        log.info("Received restaurant.orders.completedS for orderId={}", orderId);
 
         // 1. Проверка идемпотентности: уже обрабатывали этот заказ?
         if (paymentRepository.findByOrderId(orderId).isPresent()) {
@@ -103,6 +118,7 @@ public class PaymentListener {
             log.info("Payment FAILED for orderId={}", orderId);
             publishResult(orderId, payment.getId(), "ABORTED", "Payment declined");
         }
+        processedEventRepository.save(ProcessedEvent.builder().id(event.getEventId()).build());
     }
 
     private Payment idempotentReceiver(Payment payment) {
@@ -120,6 +136,7 @@ public class PaymentListener {
                 .paymentId(paymentId)
                 .status(status)
                 .reason(reason)
+                .eventId(UUID.randomUUID())
                 .build();
 
         String topic = "PAID".equals(status) ? "payment.completed" : "payment.failed";

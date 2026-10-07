@@ -53,6 +53,7 @@ public class OrderServiceImpl implements OrderService {
                                 .cnt(od.getCnt())
                                 .price(od.getPrice())
                         .build())
+
         );
 
         OrderCreatedEvent event = OrderCreatedEvent.builder()
@@ -61,6 +62,7 @@ public class OrderServiceImpl implements OrderService {
                 .restaurantId(saved.getRestaurantId())
                 .totalAmount(saved.getTotalAmount())
                 .createdAt(saved.getCreatedAt())
+                .eventId(UUID.randomUUID())
                 .build();
 
         saveToOutbox(saved.getId(), event);

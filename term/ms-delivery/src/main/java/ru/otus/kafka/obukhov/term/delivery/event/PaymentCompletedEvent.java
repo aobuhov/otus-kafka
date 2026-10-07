@@ -13,4 +13,5 @@ public class PaymentCompletedEvent {
     private UUID orderId;
     private UUID paymentId;
     private String status;
+    private UUID eventId;
 }

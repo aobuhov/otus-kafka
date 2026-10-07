@@ -15,4 +15,5 @@ public class DeliveryEvent {
     private UUID orderId;
     private UUID employeeId;
     private String status;  // ASSIGNED / PICKED_UP / COMPLETED
+    private UUID eventId;
 }

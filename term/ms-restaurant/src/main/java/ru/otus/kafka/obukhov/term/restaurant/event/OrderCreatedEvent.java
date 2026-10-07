@@ -1,4 +1,4 @@
-package ru.otus.kafka.obukhov.term.order.event;
+package ru.otus.kafka.obukhov.term.restaurant.event;
 
 import lombok.*;
 import java.math.BigDecimal;

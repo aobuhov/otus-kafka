@@ -68,6 +68,7 @@ public class DeliveryServiceImpl implements ru.otus.kafka.obukhov.term.delivery.
                 .employeeId(delivery.getEmployee() != null
                         ? delivery.getEmployee().getId() : null)
                 .status(delivery.getStatus().name())
+                .eventId(UUID.randomUUID())
                 .build();
 
         kafkaTemplate.send(topic, delivery.getOrderId().toString(), event);

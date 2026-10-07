@@ -12,4 +12,5 @@ import java.util.UUID;
 public class RestaurantOrderAcceptedEvent {
     private UUID orderId;
     private UUID restaurantId;
+    private UUID eventId;
 }

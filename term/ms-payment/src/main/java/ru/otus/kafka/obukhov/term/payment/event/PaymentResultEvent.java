@@ -13,4 +13,5 @@ public class PaymentResultEvent {
     private UUID paymentId;
     private String status;  // PAID / ABORTED / CANCELLED
     private String reason;
+    private UUID eventId;
 }

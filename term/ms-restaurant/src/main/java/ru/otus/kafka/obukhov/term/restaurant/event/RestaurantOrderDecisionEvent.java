@@ -13,4 +13,5 @@ public class RestaurantOrderDecisionEvent {
     private UUID orderId;
     private UUID restaurantId;
     private String reason;  // для rejected
+    private UUID eventId;
 }
